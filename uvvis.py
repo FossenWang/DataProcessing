@@ -2,28 +2,51 @@
 处理紫外可见分光光度法的实验数据
 '''
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-asc = open('F:\\Laboratory\\紫外数据\\20171010\\原.asc', 'r')
+def readasc(file):
+    '''
+    读取一个asc文件，返回一个列表，其中包含波长、吸光度的两个np数组
+    '''
+    with open(file, 'r') as asc:
+        ascline = '1'
+        while ascline != '':
+            ascline = asc.readline()
+            if ascline == '#DATA\n':
+                break
+        wavelength, absorbance = [], []
+        ascline = asc.readline()
+        while ascline != '':
+            ascline = ascline.strip('\n')
+            wavelength.append(float(ascline.split('\t')[0]))
+            absorbance.append(float(ascline.split('\t')[1]))
+            ascline = asc.readline()
 
-asc_line = '1'
-while asc_line!='':
-    asc_line = asc.readline()
-    if(asc_line=='#DATA\n'):
-        break
+    x_wavelength = np.array(wavelength)
+    y_absorbance = np.array(absorbance)
+    return [x_wavelength, y_absorbance]
 
-wave_length,absorbance = [],[]
+def readascdir(filedir):
+    '''
+    读取给定目录中所有的asc文件
+    '''
+    files = os.listdir(filedir)
+    xylist = []
+    for file in files:
+        if file.endswith('.asc'):
+            xylist.append(readasc(filedir+'\\'+file))
+    return xylist
 
-asc_line = asc.readline()
-while asc_line!='':
-    asc_line = asc_line.strip('\n')
-    wave_length.append(float(asc_line.split('\t')[0]))
-    absorbance.append(float(asc_line.split('\t')[1]))
-    asc_line = asc.readline()
-
-x=np.array(wave_length)
-y=np.array(absorbance)
-
-plt.plot(x,y)
-plt.show()
+def drawuvvis(xylist):
+    '''
+    输入二维列表，第二维的元素是一个列表，其中包含波长、吸光度的两个np数组
+    绘制出uv-vis图
+    '''
+    for xyarray in xylist:
+        if len(xyarray) == 2:
+            plt.plot(xyarray[0], xyarray[1])
+        else:
+            print('列表大小不对，应只有2个元素')
+    plt.show()
