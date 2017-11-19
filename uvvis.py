@@ -6,9 +6,40 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+from matplotlib.markers import MarkerStyle
+
+class UvvisData:
+    '''
+    紫外可见光谱数据，一份数据包含了波长数组、吸光度数组和数据名
+    '''
+    def __init__(self, wavelength_array, absorbance_array, name):
+        self.wavelength_array = wavelength_array
+        self.absorbance_array = absorbance_array
+        self.name = name
+
+    def get_absorbance(self, wavelength=333):
+        '''
+        取出光谱数据中某一波长的吸光度
+        '''
+        if wavelength in self.wavelength_array:
+            return self.absorbance_array[np.argwhere(self.wavelength_array == wavelength)[0][0]]
+        else:
+            print('输入波长范围应在{}~{}nm内'.format(self.wavelength_array[-1], self.wavelength_array[0]))
+
+class ConcentrationChangeData:
+    '''
+    根据吸光度变化计算得到物质浓度变化
+    包含物质浓度比例（C/C0）数组、时间数组的数据
+    '''
+    def __init__(self, c_array, time_array, name):
+        self.c_array = c_array
+        self.time_array = time_array
+        self.name = name
+
 def readasc(file):
     '''
     读取一个asc文件，返回一个列表，其中包含波长、吸光度的两个np数组
+    文件名为样品的浓度变化对应的时间
     '''
     with open(file, 'r') as asc:
         ascline = '1'
@@ -26,39 +57,32 @@ def readasc(file):
 
     x_wavelength = np.array(wavelength)
     y_absorbance = np.array(absorbance)
-    return [x_wavelength, y_absorbance, file.split('\\')[-1]]
+    return UvvisData(x_wavelength, y_absorbance, file.split('\\')[-1].split('.')[0])
 
 def readascdir(filedir):
     '''
     读取给定目录中所有的asc文件
     '''
     files = os.listdir(filedir)
-    xylist = []
+    uvvis_datas = []
     for file in files:
         if file.endswith('.asc'):
-            xylist.append(readasc(filedir+'\\'+file))
-    return xylist
+            uvvis_datas.append(readasc(filedir+'\\'+file))
+    return uvvis_datas
 
-def getabsor(xylist, wavelength=333):
+def get_concentration_change(uvvis_datas, wavelength=333, name=''):
     '''
-    取出光谱图中某一波长的吸光度
+    传入UvvisData列表和相应的时间以及特征波长
+    得到浓度变化的数据
     '''
-    absorbance = []
+    absorlist = []
+    timelist = []
+    for data in uvvis_datas:
+        absorlist.append(data.get_absorbance(wavelength))
+        timelist.append(data.name)
+    return ConcentrationChangeData(np.array(absorlist)/absorlist[0], timelist, name)
 
-    if len(xylist) > 3:
-        for xy in xylist:
-            if len(xy) == 3:
-                absorbance.append(xy[1][np.argwhere(xy[0] == wavelength)[0][0]])
-            else:
-                print('列表结构不对，应为2维列表，且第二维的列表包含2个np数组和一个字符串')
-    elif len(xylist) == 3:
-        absorbance.append(xylist[1][np.argwhere(xy[0] == wavelength)])
-    else:
-        print('列表结构不对，应为2维列表，且第二维的列表包含2个np数组和一个字符串')
-
-    return absorbance
-
-def drawuvvis(xylist):
+def draw_uvvis(uvvis_datas):
     '''
     输入二维列表并绘制出uv-vis图
     该列表第二维的元素也是一个列表，其中包含波长、吸光度的两个np数组
@@ -66,20 +90,26 @@ def drawuvvis(xylist):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    if len(xylist) > 3:
-        for xy in xylist:
-            if len(xy) == 3:
-                ax.plot(xy[0], xy[1], label=xy[2])
-            else:
-                print('列表结构不对，应为2维列表，且第二维的列表包含2个np数组和一个字符串')
-    elif len(xylist) == 3:
-        ax.plot(xylist[0], xylist[1], label=xy[2])
-    else:
-        print('列表结构不对，应为2维列表，且第二维的列表包含2个np数组和一个字符串')
+    for data in uvvis_datas:
+        ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
 
     ax.set_xlabel('wavelength')
     ax.set_ylabel('absorbance')
     ax.set_title('UV-Vis')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels)
+    return fig
+
+def draw_concentration_change(c_change):
+    '''
+    绘制物质浓度-时间图
+    '''
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_prop_cycle('marker', MarkerStyle.filled_markers)
+    ax.plot(c_change.time_array, c_change.c_array, label=c_change.name)
+    ax.set_xlabel('Time (min)')
+    ax.set_ylabel(r'$C/C_0$')
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels)
     return fig
