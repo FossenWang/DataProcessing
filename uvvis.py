@@ -6,7 +6,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib.markers import MarkerStyle
+from matplotlib.font_manager import FontProperties
+
+font = ['YouYuan', 'DejaVu Sans']
 
 class UvvisData:
     '''
@@ -38,7 +40,7 @@ class ConcentrationChangeData:
 
 def readasc(file):
     '''
-    读取一个asc文件，返回一个列表，其中包含波长、吸光度的两个np数组
+    读取一个asc文件，返回UvvisData的实例
     文件名为样品的浓度变化对应的时间
     '''
     with open(file, 'r') as asc:
@@ -61,7 +63,7 @@ def readasc(file):
 
 def readascdir(filedir):
     '''
-    读取给定目录中所有的asc文件
+    读取给定目录中所有的asc文件，返回UvvisData的实例列表
     '''
     files = os.listdir(filedir)
     uvvis_datas = []
@@ -69,6 +71,22 @@ def readascdir(filedir):
         if file.endswith('.asc'):
             uvvis_datas.append(readasc(filedir+'\\'+file))
     return uvvis_datas
+
+def readccdatas(cc_filedir, wavelength=254):
+    '''
+    从文件夹中读取所有asc文件中的数据，并包装成ConcentrationChangeData的列表
+    输入的文件夹路径下应该全为次级文件夹，次级文件夹名字将为曲线标签
+    次级文件夹内装有asc文件，并且asc文件名为时间
+    '''
+    folders = os.listdir(cc_filedir)
+    cc_datas = []
+    for folder in folders:
+        cc_datas.append(
+            get_concentration_change(
+                readascdir(cc_filedir+'\\'+folder),
+                wavelength,
+                folder))
+    return cc_datas
 
 def get_concentration_change(uvvis_datas, wavelength=333, name=''):
     '''
@@ -89,6 +107,7 @@ def draw_uvvis(uvvis_datas):
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    plt.rcParams['font.sans-serif'] = font
 
     for data in uvvis_datas:
         ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
@@ -100,18 +119,19 @@ def draw_uvvis(uvvis_datas):
     ax.legend(handles, labels)
     return fig
 
-def draw_concentration_change(c_change_datas):
+def draw_concentration_change(cc_datas):
     '''
     传入ConcentrationChangeData实例的列表
     绘制物质浓度-时间图
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
+    plt.rcParams['font.sans-serif'] = font
     #color循环为默认风格的循环
     ax.set_prop_cycle(marker=['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8'],
                       color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
 
-    for c_change in c_change_datas:
+    for c_change in cc_datas:
         ax.plot(c_change.time_array, c_change.c_array, label=c_change.name)
 
     ax.set_xlabel('Time (min)')
