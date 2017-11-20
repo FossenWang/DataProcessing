@@ -100,14 +100,20 @@ def draw_uvvis(uvvis_datas):
     ax.legend(handles, labels)
     return fig
 
-def draw_concentration_change(c_change):
+def draw_concentration_change(c_change_datas):
     '''
+    传入ConcentrationChangeData实例的列表
     绘制物质浓度-时间图
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.set_prop_cycle('marker', MarkerStyle.filled_markers)
-    ax.plot(c_change.time_array, c_change.c_array, label=c_change.name)
+    #color循环为默认风格的循环
+    ax.set_prop_cycle(marker=['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8'],
+                      color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
+
+    for c_change in c_change_datas:
+        ax.plot(c_change.time_array, c_change.c_array, label=c_change.name)
+
     ax.set_xlabel('Time (min)')
     ax.set_ylabel(r'$C/C_0$')
     handles, labels = ax.get_legend_handles_labels()
