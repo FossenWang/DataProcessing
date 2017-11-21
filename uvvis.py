@@ -6,9 +6,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib.font_manager import FontProperties
-
-font = ['YouYuan', 'DejaVu Sans']
+FONT = ['YouYuan', 'DejaVu Sans']
 
 class UvvisData:
     '''
@@ -38,7 +36,7 @@ class ConcentrationChangeData:
         self.time_array = time_array
         self.name = name
 
-def readasc(file):
+def read_asc(file):
     '''
     读取一个asc文件，返回UvvisData的实例
     文件名为样品的浓度变化对应的时间
@@ -57,11 +55,9 @@ def readasc(file):
             absorbance.append(float(ascline.split('\t')[1]))
             ascline = asc.readline()
 
-    x_wavelength = np.array(wavelength)
-    y_absorbance = np.array(absorbance)
-    return UvvisData(x_wavelength, y_absorbance, file.split('\\')[-1].split('.')[0])
+    return UvvisData(np.array(wavelength), np.array(absorbance), file.split('\\')[-1].split('.')[0])
 
-def readascdir(filedir):
+def read_ascdir(filedir):
     '''
     读取给定目录中所有的asc文件，返回UvvisData的实例列表
     '''
@@ -69,10 +65,10 @@ def readascdir(filedir):
     uvvis_datas = []
     for file in files:
         if file.endswith('.asc'):
-            uvvis_datas.append(readasc(filedir+'\\'+file))
+            uvvis_datas.append(read_asc(filedir+'\\'+file))
     return uvvis_datas
 
-def readccdatas(cc_filedir, wavelength=254):
+def read_ccdatas(cc_filedir, wavelength=254):
     '''
     从文件夹中读取所有asc文件中的数据，并包装成ConcentrationChangeData的列表
     输入的文件夹路径下应该全为次级文件夹，次级文件夹名字将为曲线标签
@@ -83,7 +79,7 @@ def readccdatas(cc_filedir, wavelength=254):
     for folder in folders:
         cc_datas.append(
             get_concentration_change(
-                readascdir(cc_filedir+'\\'+folder),
+                read_ascdir(cc_filedir+'\\'+folder),
                 wavelength,
                 folder))
     return cc_datas
@@ -107,7 +103,7 @@ def draw_uvvis(uvvis_datas):
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.rcParams['font.sans-serif'] = font
+    plt.rcParams['FONT.sans-serif'] = FONT
 
     for data in uvvis_datas:
         ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
@@ -126,7 +122,7 @@ def draw_concentration_change(cc_datas):
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.rcParams['font.sans-serif'] = font
+    plt.rcParams['FONT.sans-serif'] = FONT
     #color循环为默认风格的循环
     ax.set_prop_cycle(marker=['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8'],
                       color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
