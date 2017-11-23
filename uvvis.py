@@ -1,12 +1,11 @@
 '''
 处理紫外可见分光光度法的实验数据
 '''
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-FONT = ['YouYuan', 'DejaVu Sans']
+FONT = ['DejaVu Sans','YouYuan'] #默认字体不支持中文，如需支持中文将YouYuan调到第一位即可
 
 class UvvisData:
     '''
@@ -22,7 +21,7 @@ class UvvisData:
         取出光谱数据中某一波长的吸光度
         '''
         if wavelength in self.wavelength_array:
-            return self.absorbance_array[np.argwhere(self.wavelength_array == wavelength)[0][0]]
+            return self.absorbance_array[np.where(self.wavelength_array == wavelength)[0][0]]
         else:
             print('输入波长范围应在{}~{}nm内'.format(self.wavelength_array[-1], self.wavelength_array[0]))
 
@@ -122,7 +121,7 @@ def draw_concentration_change(cc_datas):
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.rcParams['FONT.sans-serif'] = FONT
+    plt.rcParams['font.sans-serif'] = FONT
     #color循环为默认风格的循环
     ax.set_prop_cycle(marker=['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8'],
                       color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
