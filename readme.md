@@ -1,6 +1,10 @@
-[TOC]
-
-
+##目录
+* uvvis模块
+ * 使用说明
+ * API 参考
+* uvvisdrs模块
+ * 使用说明
+ * API 参考
 
 # uvvis模块
 处理紫外可见分光光度法的实验数据
@@ -61,7 +65,7 @@ uvvisdrs.write_drs(drs)
 #将实验数据写入txt文件中，并保存到python解释器的当前目录
 ```
 以上代码应该得到类似这样的结果：
-![样品1的原始数据与拟合直线图](example/1_result.png "样品1的原始数据与拟合直线图")
+![样品1的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/1_result.png "样品1的原始数据与拟合直线图")
 ```
 1_result.txt
 samlpe:1
@@ -88,7 +92,7 @@ fig = uvvisdrs.draw_hvfr(drs)
 plt.show()
 ```
 发现自动拟合的结果有误，第二张图中由于曲线有突起，使得程序算法中默认的拟合算法出现偏差，如下：
-![自动拟合结果有误](example/3_wrong_result.png "自动拟合结果有误")
+![自动拟合结果有误](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/3_wrong_result.png "自动拟合结果有误")
 接下来需要手动拟合，需要先从图上找出较比较直的一段曲线
 将鼠标移动到这段曲线中央的一点上，读出其横坐标，输入至refit()函数中即可完成一次手动拟合
 ```python
@@ -100,7 +104,7 @@ uvvisdrs.refit(drs, 0.5, 5.9)
 #还有第四个可选参数a，这里没给，如果想扩大或缩小拟合范围，可输入该参数，如a=10
 ```
 手动拟合结果如下：
-![样品3的原始数据与拟合直线图](example/3_result.png "样品3的原始数据与拟合直线图")
+![样品3的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/3_result.png "样品3的原始数据与拟合直线图")
 ```
 3_result.txt
 samlpe:3
