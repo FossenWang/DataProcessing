@@ -1,10 +1,10 @@
-##目录
-* uvvis模块
- * 使用说明
- * API 参考
-* uvvisdrs模块
- * 使用说明
- * API 参考
+## 目录
+* [uvvis模块](#uvvis模块)
+  * [使用说明](#使用说明)
+  * [API 参考](#api-参考)
+* [uvvisdrs模块](#uvvisdrs模块)
+  * [使用说明](#使用说明-1)
+  * [API 参考](#api-参考-1)
 
 # uvvis模块
 处理紫外可见分光光度法的实验数据
@@ -22,15 +22,10 @@
 ### draw_uvvis(uvvis_datas)
 ### draw_concentration_change(cc_datas)
 
-
-
 # uvvisdrs模块
 处理处理紫外可见漫反射光谱的实验数据
-
 ## 使用说明
-
 ### 自动拟合
-
 以样品1为例，原始数据保存在1.txt中，内容应如下，否则程序无法正确识别：
 ```
 1.txt
@@ -120,7 +115,6 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 ```
 
 ## API 参考
-
 ### class UvvisDrsData
 ### refit(drs, n, fp, a)
 ### logistic_fit(x, y)
