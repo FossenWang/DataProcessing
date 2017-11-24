@@ -2,28 +2,31 @@
 
 
 
-#uvvis模块
+# uvvis模块
 处理紫外可见分光光度法的实验数据
 
-##使用说明
+## 使用说明
 
-##API 参考
-###class UvvisData
-###class ConcentrationChangeData
-###read_asc(file)
-###read_ascdir(filedir)
-###read_ccdatas(cc_filedir, wavelength)
-###get_concentration_change(uvvis_datas, wavelength, name)
-###draw_uvvis(uvvis_datas)
-###draw_concentration_change(cc_datas)
+## API 参考
+
+### class UvvisData
+### class ConcentrationChangeData
+### read_asc(file)
+### read_ascdir(filedir)
+### read_ccdatas(cc_filedir, wavelength)
+### get_concentration_change(uvvis_datas, wavelength, name)
+### draw_uvvis(uvvis_datas)
+### draw_concentration_change(cc_datas)
 
 
 
-#uvvisdrs模块
+# uvvisdrs模块
 处理处理紫外可见漫反射光谱的实验数据
 
-##使用说明
-###自动拟合
+## 使用说明
+
+### 自动拟合
+
 以样品1为例，原始数据保存在1.txt中，内容应如下，否则程序无法正确识别：
 ```
 1.txt
@@ -72,7 +75,8 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 200.5	0.09706	6.18453865337	4.19998270966	674.698308624	5.09656309795
 201.0	0.09419	6.16915422886	4.35551415278	721.988223942	5.18361250041
 ```
-###手动拟合
+### 手动拟合
+
 但数据不总是尽如人意的，如果程序自动拟合的结果不好，则需要调用refit()函数来手动拟合
 下面是手动拟合的例子：
 ```python
@@ -111,11 +115,12 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 201.0	0.38687	6.16915422886	0.485858811616	8.98403474041	1.73128216716
 ```
 
-##API 参考
-###class UvvisDrsData
-###refit(drs, n, fp, a)
-###logistic_fit(x, y)
-###num_differ(x, y)
-###read_raw(file)
-###write_drs(drs)
-###draw_hvfr(drs)
+## API 参考
+
+### class UvvisDrsData
+### refit(drs, n, fp, a)
+### logistic_fit(x, y)
+### num_differ(x, y)
+### read_raw(file)
+### write_drs(drs)
+### draw_hvfr(drs)
