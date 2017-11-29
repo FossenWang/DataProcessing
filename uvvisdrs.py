@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
+from openpyxl import Workbook
 
 class UvvisDrsData:
     '''
@@ -14,7 +15,7 @@ class UvvisDrsData:
     def __init__(self, wavelength_array, reflectance_array, name):
         self.wavelength_array = wavelength_array
         self.reflectance_array = reflectance_array
-        self.name = name
+        self.name = name    #保存文件的绝对路径或相对路径
         self.hv = self.calculate_hv(wavelength_array)
         self.fr = self.calculate_fr()
         self.hvfr2 = self.calculate_hvfr2()
@@ -69,16 +70,104 @@ class UvvisDrsData:
         eg = -b/k
         return [eg, k, b, r]
 
-def refit(drs, n, fp=0, a=25):
-    '''
-    根据输入的点x0和左右元素范围a重新拟合曲线，n为（hvfr）^n中的的指数n
-    '''
-    if n == 2:
-        drs.egd, drs.kd, drs.bd, drs.rd = drs.calculate_eg(drs.hvfr2, fp=fp, a=a)
-    elif n == 0.5:
-        drs.egi, drs.ki, drs.bi, drs.ri = drs.calculate_eg(drs.hvfr12, fp=fp, a=a)
-    else:
-        print('please enter n=2 or n = 0.5')
+    def refit(self, n, fp=0, a=25):
+        '''
+        根据输入的点x0和左右元素范围a重新拟合曲线，n为（hvfr）^n中的的指数n
+        '''
+        if n == 2:
+            self.egd, self.kd, self.bd, self.rd = self.calculate_eg(self.hvfr2, fp=fp, a=a)
+            print('done')
+        elif n == 0.5:
+            self.egi, self.ki, self.bi, self.ri = self.calculate_eg(self.hvfr12, fp=fp, a=a)
+            print('done')
+        else:
+            print('please enter n=2 or n = 0.5')
+    
+    def write_txt(self):
+        '''
+        将数据写入至txt文件,保存路径为self.name+'_result.txt'
+        '''
+        with open(self.name.split('.')[0]+'_result.txt', 'w') as txt:
+            txt.write('samlpe:  '+self.name+'\n')
+            txt.write('direct band gap: wevelength='+str(1240/self.egd)+'nm energy='+str(self.egd)+'eV\n')
+            txt.write('\tlinear fit coefficient: slope='+str(self.kd)+' intercept='+str(self.bd)+' r='+str(self.rd))
+            txt.write('\nindirect band gap: wevelength='+str(1240/self.egi)+'nm energy='+str(self.egi)+'eV\n')
+            txt.write('\tlinear fit coefficient: slope='+str(self.ki)+' intercept='+str(self.bi)+' r='+str(self.ri))
+            txt.write('\ndatas:\n')
+            txt.write('wavelength\tR\thv\tF(R)\t(hvF(R))^2\t(hvF(R))^1/2\n')
+            for data in zip(self.wavelength_array, self.reflectance_array, self.hv, self.fr, self.hvfr2, self.hvfr12):
+                line = ''
+                for each in data:
+                    line = line + str(each) + '\t'
+                txt.write(line[:-1] + '\n')
+
+        print('已保存至  ', self.name.split('.')[0]+'_result.txt')
+
+    def write_xlsx(self):
+        wb = Workbook()
+        ws = wb.active
+        ws.merge_cells('A1:F1')
+        ws['A1'] = 'samlpe:  '+self.name
+        ws.merge_cells('A2:F2')
+        ws['A2'] = 'direct band gap: wevelength='+str(1240/self.egd)+'nm energy='+str(self.egd)+'eV'
+        ws.merge_cells('A3:F3')
+        ws['A3'] = 'linear fit coefficient: slope='+str(self.kd)+' intercept='+str(self.bd)+' r='+str(self.rd)
+        ws.merge_cells('A4:F4')
+        ws['A4'] = 'indirect band gap: wevelength='+str(1240/self.egi)+'nm energy='+str(self.egi)+'eV'
+        ws.merge_cells('A5:F5')
+        ws['A5'] = 'linear fit coefficient: slope='+str(self.ki)+' intercept='+str(self.bi)+' r='+str(self.ri)
+        ws['A'+str(6)] = 'datas:'
+        ws['A'+str(7)] = 'wavelength'
+        ws['B'+str(7)] = 'R'
+        ws['C'+str(7)] = 'hv'
+        ws['D'+str(7)] = 'F(R)'
+        ws['E'+str(7)] = '(hvF(R))^2'
+        ws['F'+str(7)] = '(hvF(R))^1/2'
+        i=7
+        for data in zip(self.wavelength_array, self.reflectance_array, self.hv, self.fr, self.hvfr2, self.hvfr12):
+            i+=1
+            ws['A'+str(i)] = data[0]
+            ws['B'+str(i)] = data[1]
+            ws['C'+str(i)] = data[2]
+            ws['D'+str(i)] = data[3]
+            ws['E'+str(i)] = data[4]
+            ws['F'+str(i)] = data[5]
+        path = self.name.split('.')[0]+'_result.xlsx'
+        try:
+            wb.save(path)
+            print('已保存至  ', path)
+        except PermissionError as e:
+            print(e, '\n无法保存文件，请确认该文件是否被其他程序打开')
+
+    def draw_hvfr(self):
+        '''
+        传入UvvisDrsData实例
+        绘制(hvF(R))^2-hv图和(hvF(R))^1/2-hv图
+        '''
+        fig = plt.figure()
+        fig.set_size_inches(12,5.2)
+        ax1 = fig.add_subplot(121)
+        ax2 = fig.add_subplot(122)
+        ax1.plot(self.hv, self.hvfr2, label='direct')
+        ax1.plot([self.egd, (max(self.hvfr2)-self.bd)/self.kd], [0, max(self.hvfr2)])
+        ax1.set_xlabel('hv (eV)')
+        ax1.set_ylabel(r'$(hv F(R))^2$')
+        handles, labels = ax1.get_legend_handles_labels()
+        ax1.legend(handles, labels)
+        ax1.text(self.egd-0.25, max(self.hvfr2)/2,
+            (r'$\lambda$ = '+str(int(round(1240/self.egd)))+' nm\n'+r'$E_g$ = '+str(round(self.egd,2))+' eV'),
+            horizontalalignment='right', verticalalignment='bottom')
+
+        ax2.plot(self.hv, self.hvfr12, label='indirect')
+        ax2.plot([self.egi, (max(self.hvfr12)-self.bi)/self.ki], [0, max(self.hvfr12)])
+        ax2.set_xlabel('hv (eV)')
+        ax2.set_ylabel(r'$(hv F(R))^\frac{1}{2}$')
+        handles, labels = ax2.get_legend_handles_labels()
+        ax2.legend(handles, labels)
+        ax2.text(self.egi-0.25, max(self.hvfr12)/2,
+            (r'$\lambda$ = '+str(int(round(1240/self.egi)))+' nm\n'+r'$E_g$ = '+str(round(self.egi,2))+' eV'),
+            horizontalalignment='right', verticalalignment='bottom')
+        return fig
 
 def logistic_fit(x, y):
     '''
@@ -108,6 +197,8 @@ def num_differ(x, y):
 def read_raw(file):
     '''
     读取存有DRS数据的txt文件
+    支持读取以下型号的仪器产生的数据：
+    UV-Visible diffuse reflectance spectroscopy UV-2550PC (Shimadzu Corporation, Japan)
     '''
     with open(file, 'r') as txt:
         txtline = '1'
@@ -123,52 +214,4 @@ def read_raw(file):
             reflectance_array.append(float(txtline.split(',')[1]))
             txtline = txt.readline()
 
-    return UvvisDrsData(np.array(wavelength), np.array(reflectance_array)/100, file.split('\\')[-1].split('.')[0])
-
-def write_drs(drs):
-    '''
-    将数据写入至txt文件
-    '''
-    with open(drs.name+'_result.txt', 'w') as txt:
-        txt.write('samlpe:'+str(drs.name)+'\n')
-        txt.write('direct band gap: wevelength='+str(1240/drs.egd)+'nm energy='+str(drs.egd)+'eV\n')
-        txt.write('\tlinear fit coefficient: slope='+str(drs.kd)+' intercept='+str(drs.bd)+' r='+str(drs.rd))
-        txt.write('\nindirect band gap: wevelength='+str(1240/drs.egi)+'nm energy='+str(drs.egi)+'eV\n')
-        txt.write('\tlinear fit coefficient: slope='+str(drs.ki)+' intercept='+str(drs.bi)+' r='+str(drs.ri))
-        txt.write('\ndatas:\n')
-        txt.write('wavelength\tR\thv\tF(R)\t(hvF(R))^2\t(hvF(R))^1/2\n')
-        for data in zip(drs.wavelength_array, drs.reflectance_array, drs.hv, drs.fr, drs.hvfr2, drs.hvfr12):
-            line = ''
-            for each in data:
-                line = line + str(each) + '\t'
-            txt.write(line[:-1] + '\n')
-
-def draw_hvfr(drs):
-    '''
-    传入UvvisDrsData实例
-    绘制(hvF(R))^2-hv图和(hvF(R))^1/2-hv图
-    '''
-    fig = plt.figure()
-    fig.set_size_inches(12,5.2)
-    ax1 = fig.add_subplot(121)
-    ax2 = fig.add_subplot(122)
-    ax1.plot(drs.hv, drs.hvfr2, label='direct')
-    ax1.plot([drs.egd, (max(drs.hvfr2)-drs.bd)/drs.kd], [0, max(drs.hvfr2)])
-    ax1.set_xlabel('hv (eV)')
-    ax1.set_ylabel(r'$(hv F(R))^2$')
-    handles, labels = ax1.get_legend_handles_labels()
-    ax1.legend(handles, labels)
-    ax1.text(drs.egd-0.25, max(drs.hvfr2)/2,
-        (r'$\lambda$ = '+str(int(round(1240/drs.egd)))+' nm\n'+r'$E_g$ = '+str(round(drs.egd,2))+' eV'),
-        horizontalalignment='right', verticalalignment='bottom')
-
-    ax2.plot(drs.hv, drs.hvfr12, label='indirect')
-    ax2.plot([drs.egi, (max(drs.hvfr12)-drs.bi)/drs.ki], [0, max(drs.hvfr12)])
-    ax2.set_xlabel('hv (eV)')
-    ax2.set_ylabel(r'$(hv F(R))^\frac{1}{2}$')
-    handles, labels = ax2.get_legend_handles_labels()
-    ax2.legend(handles, labels)
-    ax2.text(drs.egi-0.25, max(drs.hvfr12)/2,
-        (r'$\lambda$ = '+str(int(round(1240/drs.egi)))+' nm\n'+r'$E_g$ = '+str(round(drs.egi,2))+' eV'),
-        horizontalalignment='right', verticalalignment='bottom')
-    return fig
+    return UvvisDrsData(np.array(wavelength), np.array(reflectance_array)/100, file)

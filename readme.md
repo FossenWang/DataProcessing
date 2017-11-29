@@ -24,6 +24,10 @@
 
 # uvvisdrs模块
 处理处理紫外可见漫反射光谱的实验数据
+暂时只支持读取以下型号的仪器产生的数据：
+* UV-Visible diffuse reflectance spectroscopy UV-2550PC (Shimadzu Corporation, Japan)
+参考文献：DOI: 10.1039/c7tc04168c
+
 ## 使用说明
 ### 自动拟合
 以样品1为例，原始数据保存在1.txt中，内容应如下，否则程序无法正确识别：
@@ -41,23 +45,24 @@
 import matplotlib.pyplot as plt
 import uvvisdrs
 
-drs = uvvisdrs.read_raw(r'F:\Laboratory\实验数据\紫外漫反射\1.txt')
+drs = uvvisdrs.read_raw('F:/Laboratory/实验数据/紫外漫反射/1.txt')
 #该行将读取原始文件中的数据，并保存至drs对象中，drs为UvvisDrsData的一个实例
 #创建对象的同时已经自动完成了对数据的拟合和计算，后面的代码仅用于输出结果
 #单引号内为数据文件的完整路径，上面的代码中是示范，使用时请替换成你的文件路径
-#注意！路径应包裹在r''内，不要省略r
-fig = uvvisdrs.draw_hvfr(drs)
+fig = drs.draw_hvfr()
 #绘制drs的图像
 plt.show()
 #调用此函数会显示并删除fig对象
 #先显示图像以判断结果是否符合要求
 #如果符合则保存图像和数据
-fig = uvvisdrs.draw_hvfr(drs)
+fig = drs.draw_hvfr()
 #由于plt.show()删除了之前的图像缓存，再次绘制drs的图像
-fig.savefig(str(drs.name)+'_result.png')
+fig.savefig(drs.name.split('.')[0]+'_result.png')
 #保存图像到python解释器的当前目录
-uvvisdrs.write_drs(drs)
-#将实验数据写入txt文件中，并保存到python解释器的当前目录
+drs.write_txt()
+#将实验数据写入txt文件中，保存路径为drs.name.split('.')[0]+'_result.txt'
+drs.write_xlsx()
+#将实验数据写入excel的xlsx文件中，保存路径为drs.name.split('.')[0]+'_result.txt'
 ```
 以上代码应该得到类似这样的结果：
 ![样品1的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/1_result.png "样品1的原始数据与拟合直线图")
@@ -83,7 +88,7 @@ import matplotlib.pyplot as plt
 import uvvisdrs
 
 drs = uvvisdrs.read_raw(r'F:\Laboratory\实验数据\紫外漫反射\3.txt')
-fig = uvvisdrs.draw_hvfr(drs)
+fig = drs.draw_hvfr()
 plt.show()
 ```
 发现自动拟合的结果有误，第二张图中由于曲线有突起，使得程序算法中默认的拟合算法出现偏差，如下：
@@ -91,12 +96,14 @@ plt.show()
 接下来需要手动拟合，需要先从图上找出较比较直的一段曲线
 将鼠标移动到这段曲线中央的一点上，读出其横坐标，输入至refit()函数中即可完成一次手动拟合
 ```python
-uvvisdrs.refit(drs, 0.5, 5.9)
+drs.refit(0.5, 5.9)
 #第一个参数是要重新拟合的数据，第二个参数为曲线类型的代号
 #direct曲线代号为2，indirect曲线代号为0.5，其他值无用
 #第三个参数为拟合的起始点的横坐标，拟合过程将会从该点开始，取左右各a个数据点一起拟合直线
 #拟合时默认从a=25开始，如果相关系数r<0.99，则缩小取值范围，知道r>0.99为止
 #还有第四个可选参数a，这里没给，如果想扩大或缩小拟合范围，可输入该参数，如a=10
+fig = drs.draw_hvfr()
+plt.show()#重绘并显示图像
 ```
 手动拟合结果如下：
 ![样品3的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/3_result.png "样品3的原始数据与拟合直线图")
@@ -115,10 +122,10 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 ```
 
 ## API 参考
-### class UvvisDrsData
-### refit(drs, n, fp, a)
+### read_raw(file)
 ### logistic_fit(x, y)
 ### num_differ(x, y)
-### read_raw(file)
-### write_drs(drs)
-### draw_hvfr(drs)
+### class UvvisDrsData
+#### refit(n, fp, a)
+#### write_txt(drs)
+#### draw_hvfr(drs)

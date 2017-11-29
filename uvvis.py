@@ -95,6 +95,8 @@ def get_concentration_change(uvvis_datas, wavelength=333, name=''):
         timelist.append(data.name)
     return ConcentrationChangeData(np.array(absorlist)/absorlist[0], timelist, name)
 
+#def write_xlsx(cc_datas):
+
 def draw_uvvis(uvvis_datas):
     '''
     输入二维列表并绘制出uv-vis图
