@@ -8,6 +8,8 @@
 
 # uvvis模块
 处理紫外可见分光光度法的实验数据
+暂时只支持读取以下型号的仪器产生的数据：
+* PerkinElmer UV WinLab 6.0.4.0738 / Lambda35 1.27
 
 ## 使用说明
 
@@ -45,7 +47,7 @@
 import matplotlib.pyplot as plt
 import uvvisdrs
 
-drs = uvvisdrs.read_raw('F:/Laboratory/实验数据/紫外漫反射/1.txt')
+drs = uvvisdrs.read_raw(r'F:/Laboratory/实验数据/紫外漫反射/1.txt')
 #该行将读取原始文件中的数据，并保存至drs对象中，drs为UvvisDrsData的一个实例
 #创建对象的同时已经自动完成了对数据的拟合和计算，后面的代码仅用于输出结果
 #单引号内为数据文件的完整路径，上面的代码中是示范，使用时请替换成你的文件路径
@@ -87,7 +89,7 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 import matplotlib.pyplot as plt
 import uvvisdrs
 
-drs = uvvisdrs.read_raw(r'F:\Laboratory\实验数据\紫外漫反射\3.txt')
+drs = uvvisdrs.read_raw(r'F:/Laboratory/实验数据/紫外漫反射/3.txt')
 fig = drs.draw_hvfr()
 plt.show()
 ```

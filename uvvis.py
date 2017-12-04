@@ -104,7 +104,7 @@ def draw_uvvis(uvvis_datas):
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.rcParams['FONT.sans-serif'] = FONT
+    plt.rcParams['font.sans-serif'] = FONT
 
     for data in uvvis_datas:
         ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
