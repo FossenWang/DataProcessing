@@ -4,6 +4,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colors, cm
 
 FONT = ['DejaVu Sans','YouYuan'] #默认字体不支持中文，如需支持中文将YouYuan调到第一位即可
 
@@ -61,6 +62,11 @@ def read_ascdir(filedir):
     读取给定目录中所有的asc文件，返回UvvisData的实例列表
     '''
     files = os.listdir(filedir)
+    try:
+        files = sorted(files, key=lambda x:int(x.split('.')[0]))
+    except ValueError:
+        files.sort()
+
     uvvis_datas = []
     for file in files:
         if file.endswith('.asc'):
@@ -76,11 +82,12 @@ def read_ccdatas(cc_filedir, wavelength=254):
     folders = os.listdir(cc_filedir)
     cc_datas = []
     for folder in folders:
-        cc_datas.append(
-            get_concentration_change(
-                read_ascdir(cc_filedir+'\\'+folder),
-                wavelength,
-                folder))
+        if '.' not in folder:
+            cc_datas.append(
+                get_concentration_change(
+                    read_ascdir(cc_filedir+'\\'+folder),
+                    wavelength,
+                    folder))
     return cc_datas
 
 def get_concentration_change(uvvis_datas, wavelength=333, name=''):
@@ -92,12 +99,31 @@ def get_concentration_change(uvvis_datas, wavelength=333, name=''):
     timelist = []
     for data in uvvis_datas:
         absorlist.append(data.get_absorbance(wavelength))
-        timelist.append(data.name)
+        timelist.append(int(data.name))
     return ConcentrationChangeData(np.array(absorlist)/absorlist[0], timelist, name)
 
 #def write_xlsx(cc_datas):
 
-def draw_uvvis(uvvis_datas):
+def segment_interpolation(entry, n):
+    positions = np.linspace(0, 1 ,n)
+    values = []
+    i = 0
+    for position in positions:
+        while 1:
+            if entry[i][0] <= position <= entry[i+1][0]:
+                a = [[entry[i][0], 1],
+                     [entry[i+1][0], 1]]
+                b = [entry[i][2], entry[i][1]]
+                c = np.linalg.solve(a, b)
+                values.append(position*c[0]+c[1])
+                break
+            elif i > len(entry):
+                break
+            else:
+                i += 1
+    return values
+
+def draw_uvvis(uvvis_datas, color=None, colormap=None):
     '''
     输入二维列表并绘制出uv-vis图
     该列表第二维的元素也是一个列表，其中包含波长、吸光度的两个np数组
@@ -105,6 +131,27 @@ def draw_uvvis(uvvis_datas):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     plt.rcParams['font.sans-serif'] = FONT
+
+    if color:
+        color = colors.to_rgba(color)
+        n = len(uvvis_datas)
+        alpha = np.linspace(0.2, color[3], n)
+        colorlist = []
+        for i in range(n):
+            colorlist.append((color[0], color[1], color[2], alpha[i]))
+
+    if colormap:
+        colormap = cm.get_cmap(colormap)
+        cdict = colormap._segmentdata
+        n = len(uvvis_datas)
+        red = segment_interpolation(cdict['red'], n)
+        green = segment_interpolation(cdict['green'], n)
+        blue = segment_interpolation(cdict['blue'], n)
+        colorlist = []
+        for i in range(n):
+            colorlist.append((red[i], green[i], blue[i]))
+
+    ax.set_prop_cycle(color=colorlist)
 
     for data in uvvis_datas:
         ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
