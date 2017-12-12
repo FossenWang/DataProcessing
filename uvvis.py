@@ -4,9 +4,11 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors, cm
+from matplotlib import colors
 
-FONT = ['DejaVu Sans','YouYuan'] #默认字体不支持中文，如需支持中文将YouYuan调到第一位即可
+import calculation
+
+FONT = ['DejaVu Sans', 'YouYuan'] #默认字体不支持中文，如需支持中文将YouYuan调到第一位即可
 
 class UvvisData:
     '''
@@ -104,25 +106,6 @@ def get_concentration_change(uvvis_datas, wavelength=333, name=''):
 
 #def write_xlsx(cc_datas):
 
-def segment_interpolation(entry, n):
-    positions = np.linspace(0, 1 ,n)
-    values = []
-    i = 0
-    for position in positions:
-        while 1:
-            if entry[i][0] <= position <= entry[i+1][0]:
-                a = [[entry[i][0], 1],
-                     [entry[i+1][0], 1]]
-                b = [entry[i][2], entry[i][1]]
-                c = np.linalg.solve(a, b)
-                values.append(position*c[0]+c[1])
-                break
-            elif i > len(entry):
-                break
-            else:
-                i += 1
-    return values
-
 def draw_uvvis(uvvis_datas, color=None, colormap=None):
     '''
     输入二维列表并绘制出uv-vis图
@@ -132,26 +115,27 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None):
     ax = fig.add_subplot(111)
     plt.rcParams['font.sans-serif'] = FONT
 
+    n = len(uvvis_datas)
     if color:
-        color = colors.to_rgba(color)
-        n = len(uvvis_datas)
-        alpha = np.linspace(0.2, color[3], n)
         colorlist = []
-        for i in range(n):
-            colorlist.append((color[0], color[1], color[2], alpha[i]))
-
-    if colormap:
-        colormap = cm.get_cmap(colormap)
-        cdict = colormap._segmentdata
-        n = len(uvvis_datas)
-        red = segment_interpolation(cdict['red'], n)
-        green = segment_interpolation(cdict['green'], n)
-        blue = segment_interpolation(cdict['blue'], n)
-        colorlist = []
-        for i in range(n):
-            colorlist.append((red[i], green[i], blue[i]))
-
-    ax.set_prop_cycle(color=colorlist)
+        if colors.is_color_like(color):
+            #给一个颜色则按透明度递减产生颜色列表
+            color = colors.to_rgba(color)
+            alpha = np.linspace(color[3], 0.382, n)
+            for i in range(n):
+                colorlist.append((color[0], color[1], color[2], alpha[i]))
+        else:
+            if n <= len(color):
+                #颜色数大于曲线条数则直接应用
+                colorlist = color
+            else:
+                #颜色数小于曲线条数则转为LinearSegmentedColormap，再插值
+                lscm = colors.LinearSegmentedColormap.from_list('', color)
+                colorlist = calculation.cmap_interpolation(lscm, n)
+        ax.set_prop_cycle(color=colorlist)
+    elif colormap:
+        colorlist = calculation.cmap_interpolation(colormap, n)
+        ax.set_prop_cycle(color=colorlist)
 
     for data in uvvis_datas:
         ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
