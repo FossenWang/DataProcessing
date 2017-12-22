@@ -8,7 +8,7 @@ from matplotlib import colors
 
 import calculation
 
-FONT = ['DejaVu Sans', 'YouYuan'] #默认字体不支持中文，如需支持中文将YouYuan调到第一位即可
+CH = ['YouYuan', 'SimHei'] #中文字体幼圆
 
 class UvvisData:
     '''
@@ -18,6 +18,9 @@ class UvvisData:
         self.wavelength_array = wavelength_array
         self.absorbance_array = absorbance_array
         self.name = name
+
+    def __str__(self):
+        return self.name
 
     def get_absorbance(self, wavelength=333):
         '''
@@ -37,6 +40,9 @@ class ConcentrationChangeData:
         self.c_array = c_array
         self.time_array = time_array
         self.name = name
+
+    def __repr__(self):
+        return self.name
 
 def read_asc(file):
     '''
@@ -106,14 +112,15 @@ def get_concentration_change(uvvis_datas, wavelength=333, name=''):
 
 #def write_xlsx(cc_datas):
 
-def draw_uvvis(uvvis_datas, color=None, colormap=None):
+def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=None):
     '''
     输入二维列表并绘制出uv-vis图
     该列表第二维的元素也是一个列表，其中包含波长、吸光度的两个np数组
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.rcParams['font.sans-serif'] = FONT
+    if font:
+        plt.rcParams['font.sans-serif'] = font
 
     n = len(uvvis_datas)
     if color:
@@ -144,17 +151,21 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None):
     ax.set_ylabel('absorbance')
     ax.set_title('UV-Vis')
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels)
+    if legend_loc:
+        ax.legend(handles, labels, loc=legend_loc)
+    else:
+        ax.legend(handles, labels)
     return fig
 
-def draw_concentration_change(cc_datas):
+def draw_concentration_change(cc_datas, font=None, legend_loc=None):
     '''
     传入ConcentrationChangeData实例的列表
     绘制物质浓度-时间图
     '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    plt.rcParams['font.sans-serif'] = FONT
+    if font:
+        plt.rcParams['font.sans-serif'] = font
     #color循环为默认风格的循环
     ax.set_prop_cycle(marker=['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8'],
                       color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
@@ -165,5 +176,8 @@ def draw_concentration_change(cc_datas):
     ax.set_xlabel('Time (min)')
     ax.set_ylabel(r'$C/C_0$')
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels)
+    if legend_loc:
+        ax.legend(handles, labels, loc=legend_loc)
+    else:
+        ax.legend(handles, labels)
     return fig
