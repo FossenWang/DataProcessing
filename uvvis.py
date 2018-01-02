@@ -157,7 +157,7 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=Non
         ax.legend(handles, labels)
     return fig
 
-def draw_concentration_change(cc_datas, font=None, legend_loc=None):
+def draw_concentration_change(cc_datas, font=None, legend_loc=None, ylim=(-0.1, 1.1), **kwargs):
     '''
     传入ConcentrationChangeData实例的列表
     绘制物质浓度-时间图
@@ -171,8 +171,9 @@ def draw_concentration_change(cc_datas, font=None, legend_loc=None):
                       color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
 
     for c_change in cc_datas:
-        ax.plot(c_change.time_array, c_change.c_array, label=c_change.name)
+        ax.plot(c_change.time_array, c_change.c_array, label=c_change.name, **kwargs)
 
+    ax.set_ylim(ylim[0], ylim[1])
     ax.set_xlabel('Time (min)')
     ax.set_ylabel(r'$C/C_0$')
     handles, labels = ax.get_legend_handles_labels()
