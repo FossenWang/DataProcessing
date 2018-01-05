@@ -19,8 +19,8 @@ class UvvisData:
         self.absorbance_array = absorbance_array
         self.name = name
 
-    def __str__(self):
-        return self.name
+    def __repr__(self):
+        return 'ConcentrationChangeData:'+self.name
 
     def get_absorbance(self, wavelength=333):
         '''
@@ -42,7 +42,7 @@ class ConcentrationChangeData:
         self.name = name
 
     def __repr__(self):
-        return self.name
+        return 'ConcentrationChangeData:'+self.name
 
 def read_asc(file):
     '''
@@ -81,7 +81,7 @@ def read_ascdir(filedir):
             uvvis_datas.append(read_asc(filedir+'\\'+file))
     return uvvis_datas
 
-def read_ccdatas(cc_filedir, wavelength=254):
+def read_ccdatas(cc_filedir, wavelength=485):
     '''
     从文件夹中读取所有asc文件中的数据，并包装成ConcentrationChangeData的列表
     输入的文件夹路径下应该全为次级文件夹，次级文件夹名字将为曲线标签
@@ -89,16 +89,21 @@ def read_ccdatas(cc_filedir, wavelength=254):
     '''
     folders = os.listdir(cc_filedir)
     cc_datas = []
+    if 'initial.asc' in folders:
+        init_uvvis = read_asc(cc_filedir+'\\initial.asc')
+    else:
+        init_uvvis = None
     for folder in folders:
         if '.' not in folder:
             cc_datas.append(
                 get_concentration_change(
                     read_ascdir(cc_filedir+'\\'+folder),
+                    init_uvvis,
                     wavelength,
                     folder))
     return cc_datas
 
-def get_concentration_change(uvvis_datas, wavelength=333, name=''):
+def get_concentration_change(uvvis_datas, init_uvvis, wavelength=485, name=''):
     '''
     传入UvvisData列表和相应的时间以及特征波长
     得到浓度变化的数据
@@ -108,7 +113,11 @@ def get_concentration_change(uvvis_datas, wavelength=333, name=''):
     for data in uvvis_datas:
         absorlist.append(data.get_absorbance(wavelength))
         timelist.append(int(data.name))
-    return ConcentrationChangeData(np.array(absorlist)/absorlist[0], timelist, name)
+    if init_uvvis:
+        init_absor = init_uvvis.get_absorbance(wavelength)
+    else:
+        init_absor = absorlist[0]
+    return ConcentrationChangeData(np.array(absorlist)/init_absor, timelist, name)
 
 #def write_xlsx(cc_datas):
 
