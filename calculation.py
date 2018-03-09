@@ -43,7 +43,7 @@ def cmap_interpolation(colormap, n):
         colormap = cm.get_cmap(colormap)
 
     if hasattr(colormap, 'colors'):
-        #将ListedColormap转化为LinearSegmentedColormap
+        # 将ListedColormap转化为LinearSegmentedColormap
         colormap = colors.LinearSegmentedColormap.from_list('', colormap.colors)
 
     cdict = colormap._segmentdata
@@ -67,7 +67,4 @@ def cmap_interpolation(colormap, n):
                     break
         rgblist.append(values)
 
-    colorlist = []
-    for i in range(n):
-        colorlist.append((rgblist[0][i], rgblist[1][i], rgblist[2][i]))
-    return colorlist
+    return [(rgblist[0][i], rgblist[1][i], rgblist[2][i]) for i in range(n)]
