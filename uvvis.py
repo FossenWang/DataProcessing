@@ -29,7 +29,7 @@ class UvvisData:
         if wavelength in self.wavelength_array:
             return self.absorbance_array[np.where(self.wavelength_array == wavelength)[0][0]]
         else:
-            raise ValueError('输入波长范围应在{}~{}nm内'.format(self.wavelength_array[-1], self.wavelength_array[0]))
+            raise ValueError('{} | 输入波长范围应在{}~{}nm内'.format(wavelength, self.wavelength_array[-1], self.wavelength_array[0]))
 
 class ConcentrationChangeData:
     '''
@@ -49,12 +49,14 @@ class ConcentrationChangeData:
     def __repr__(self):
         return 'ConcentrationChangeData:'+self.name
 
-def read_asc(file):
+def read_asc(asc_file):
     '''
     读取一个asc文件，返回UvvisData的实例
     文件名为样品的浓度变化对应的时间
     '''
-    with open(file, 'r') as asc:
+    if not asc_file.endswith('.asc'):
+        return
+    with open(asc_file, 'r') as asc:
         ascline = '1'
         while ascline != '':
             ascline = asc.readline()
@@ -67,8 +69,12 @@ def read_asc(file):
             wavelength.append(float(ascline.split('\t')[0]))
             absorbance.append(float(ascline.split('\t')[1]))
             ascline = asc.readline()
-
-    return UvvisData(np.array(wavelength), np.array(absorbance), file.split('\\')[-1].split('.')[0])
+    if '\\' in asc_file:
+        c = '\\'
+    else:
+        c = '/'
+    name = asc_file.split(c)[-1].replace('.asc', '')
+    return UvvisData(np.array(wavelength), np.array(absorbance), name)
 
 def read_ascdir(filedir):
     '''
@@ -76,25 +82,21 @@ def read_ascdir(filedir):
     '''
     files = os.listdir(filedir)
     y = ''
-    if 'y.asc' in files:
-        del files[files.index('y.asc')]
-        y = 'y.asc'
-
-    notasc = []
+    ascfiles = []
     for f in files:
-        if not f.endswith('.asc'):
-            notasc.append(files.index(f))
-    for i in notasc:
-        del files[i]
-
+        if f.endswith('.asc'):
+            if f == 'y.asc':
+                y = 'y.asc'
+            else:
+                ascfiles.append(f)
     try:
-        files = sorted(files, key=lambda x:int(x.split('.')[0]))
+        ascfiles = sorted(ascfiles, key=lambda x:int(x.split('.')[0]))
     except ValueError:
-        files.sort()
-    if y:files.insert(0,y)
+        ascfiles.sort()
+    if y:ascfiles.insert(0,y)
 
     uvvis_datas = []
-    for f in files:
+    for f in ascfiles:
         if f.endswith('.asc'):
             uvvis_datas.append(read_asc(filedir+'\\'+f))
     return uvvis_datas
@@ -165,7 +167,7 @@ def write_cc_datas(file_path, cc_datas):
         ws.write_column('A%d'%n, data.time_array)
         ws.write_column('B%d'%n, data.c_array)
         ws.write_column('C%d'%n, data.c_array*data.init_absor)
-        n+=len(data.time_array)+5
+        n+=len(data.time_array)+3
     ws.set_column('A:A', 10, center)
     ws.set_column('B:C', 20, center)
     wb.close()
@@ -212,17 +214,17 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=Non
     if color:
         colorlist = []
         if colors.is_color_like(color):
-            #给一个颜色则按透明度递减产生颜色列表
+            # 给一个颜色则按透明度递减产生颜色列表
             color = colors.to_rgba(color)
             alpha = np.linspace(color[3], 0.382, n)
             for i in range(n):
                 colorlist.append((color[0], color[1], color[2], alpha[i]))
         else:
             if n <= len(color):
-                #颜色数大于曲线条数则直接应用
+                # 颜色数大于曲线条数则直接应用
                 colorlist = color
             else:
-                #颜色数小于曲线条数则转为LinearSegmentedColormap，再插值
+                # 颜色数小于曲线条数则转为LinearSegmentedColormap，再插值
                 lscm = colors.LinearSegmentedColormap.from_list('', color)
                 colorlist = calculation.cmap_interpolation(lscm, n)
         ax.set_prop_cycle(color=colorlist)
