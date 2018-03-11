@@ -1,4 +1,6 @@
-from subprocess import run
+from os import startfile
+from collections import Counter
+from re import split
 import tkinter as tk
 import tkinter.messagebox
 from tkinter.filedialog import askdirectory, askopenfilenames
@@ -96,12 +98,14 @@ class Application(tk.Frame):
         self.dir_label['text'] = askdirectory()
 
     def open_dir(self):
-        run('explorer '+self.dir_label['text'].replace('/','\\'), shell=True)
+        dirc = self.dir_label['text']
+        if not dirc:
+            tk.messagebox.showerror(title='Error', message='请选择文件夹')
+        else:
+            startfile(dirc)
 
     def manual(self):
-        r = run('manual.docx', shell=True)
-        if r.returncode is 1:
-            tk.messagebox.showerror(title='Error', message='另一个程序正在使用此文件，进程无法访问')
+        startfile('manual.docx')
 
     def clean_page(self):
         self.dir_label.pack_forget()
@@ -163,16 +167,25 @@ class Application(tk.Frame):
         self.return_button.pack(side='left', padx=10)
 
     def read_ascfiles(self):
-        try:
-            ascfiles = [self.dir_listbox.get(i) for i in range(self.dir_listbox.size())]
-            if not ascfiles:
-                raise ValueError('请添加asc文件')
-            uvvis_datas = [uvvis.read_asc(f) for f in ascfiles]
-            for i in range(len(ascfiles)):
-                uvvis_datas[i].name = '-'.join(ascfiles[i].replace('.asc', '').split('/')[-2:])
-            return uvvis_datas
-        except Exception as e:
-            tk.messagebox.showerror(title='Error', message=str(e))
+        ascfiles = [self.dir_listbox.get(i) for i in range(self.dir_listbox.size())]
+        if not ascfiles:
+            raise ValueError('请添加asc文件')
+        uvvis_datas, splitnames, lens = [], [], []
+        for f in ascfiles:
+            uvvis_datas.append(uvvis.read_asc(f))
+            splitnames.append(split(r'/|\\', f.replace('.asc', '')))
+            lens.append(len(splitnames[-1]))
+        n = len(ascfiles)
+        loop = max(lens)
+        for i in range(-1,-loop-1,-1):
+            names = ['-'.join(sn[i:]) for sn in splitnames]
+            c = Counter(names)
+            if len(c) == n:
+                # 所有名字只出现过一次，即不同名
+                for j in range(n):
+                    uvvis_datas[j].name = names[j]
+                break
+        return uvvis_datas
 
     def show_uvvis(self):
         try:
@@ -198,18 +211,15 @@ class Application(tk.Frame):
             tk.messagebox.showerror(title='Error', message=str(e))
 
     def read_ccdatas(self):
-        try:
-            cc_datas = []
-            items = [self.dir_listbox.get(i) for i in range(self.dir_listbox.size())]
-            if not items:
-                raise ValueError('请添加asc文件夹')
-            for i in items:
-                wave, file_dir = i.split(' | ')
-                cc_datas.append(uvvis.get_concentration_change(
-                    uvvis.read_ascdir(file_dir), int(wave), file_dir.split('/')[-1]))
-            return cc_datas
-        except Exception as e:
-            tk.messagebox.showerror(title='Error', message=str(e))
+        cc_datas = []
+        items = [self.dir_listbox.get(i) for i in range(self.dir_listbox.size())]
+        if not items:
+            raise ValueError('请添加asc文件夹')
+        for i in items:
+            wave, file_dir = i.split(' | ')
+            cc_datas.append(uvvis.get_concentration_change(
+                uvvis.read_ascdir(file_dir), int(wave), split(r'/|\\', file_dir)[-1]))
+        return cc_datas
 
     def show_cc_figure(self):
         try:
@@ -236,7 +246,7 @@ class Application(tk.Frame):
 
 def input_args(s=''):
     l = {}
-    exec('kwargs=(lambda **k:k)(%s)' % s, globals(), l)
+    exec('kwargs=dict(%s)' % s, globals(), l)
     return l['kwargs']
 
 root = tk.Tk()

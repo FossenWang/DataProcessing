@@ -49,7 +49,7 @@ def handle_concentration_change():
 
 def input_args(s=''):
     l = {}
-    exec('kwargs=(lambda **k:k)(%s)' % input(s), globals(), l)
+    exec('kwargs=dict(%s)' % input(s), globals(), l)
     return l['kwargs']
 
 

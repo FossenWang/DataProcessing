@@ -39,7 +39,7 @@ def cmap_interpolation(colormap, n):
     使用分段插值法计算出对应的颜色
     返回含有n个颜色的列表
     '''
-    if isinstance(colormap, str):
+    if not isinstance(colormap, colors.Colormap):
         colormap = cm.get_cmap(colormap)
 
     if hasattr(colormap, 'colors'):
@@ -68,3 +68,24 @@ def cmap_interpolation(colormap, n):
         rgblist.append(values)
 
     return [(rgblist[0][i], rgblist[1][i], rgblist[2][i]) for i in range(n)]
+
+def get_color_list(color, n):
+    '将颜色参数转化为颜色列表'
+    colorlist = []
+    if colors.is_color_like(color):
+        # 给一个颜色则按透明度递减产生颜色列表
+        color = colors.to_rgba(color)
+        if n==1:
+            return [color]
+        alpha = np.linspace(color[3], 0.382, n)
+        for i in range(n):
+            colorlist.append((color[0], color[1], color[2], alpha[i]))
+    else:
+        if n <= len(color):
+            # 颜色数大于曲线条数则取前n个
+            colorlist = [colors.to_rgba(color[i]) for i in range(n)]
+        else:
+            # 颜色数小于曲线条数则转为LinearSegmentedColormap，再插值
+            lscm = colors.LinearSegmentedColormap.from_list('', color)
+            colorlist = cmap_interpolation(lscm, n)
+    return colorlist

@@ -1,14 +1,17 @@
 '''
 处理紫外可见分光光度法的实验数据
 '''
-import os, xlsxwriter
+import os, xlsxwriter, re
+from itertools import cycle
+from collections import Counter
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors
 
 import calculation
 
 CH = ['YouYuan', 'SimHei'] #中文字体幼圆
+D_MARKERS = ['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8']
+D_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 
 class UvvisData:
     '''
@@ -69,11 +72,7 @@ def read_asc(asc_file):
             wavelength.append(float(ascline.split('\t')[0]))
             absorbance.append(float(ascline.split('\t')[1]))
             ascline = asc.readline()
-    if '\\' in asc_file:
-        c = '\\'
-    else:
-        c = '/'
-    name = asc_file.split(c)[-1].replace('.asc', '')
+    name = re.split(r'/|\\', asc_file.replace('.asc', ''))[-1]
     return UvvisData(np.array(wavelength), np.array(absorbance), name)
 
 def read_ascdir(filedir):
@@ -176,28 +175,31 @@ def write_uvvis_datas(file_path, uvvis_datas):
     '将uvvis_datas数据写入至excel表格'
     wb = xlsxwriter.Workbook(file_path)
     center = wb.add_format({'align': 'center'})
-    ws1 = wb.add_worksheet('combined')
-    n = 0
-    ws1.write(0,n, 'name→')
-    ws1.write(1,n, 'nm')
-    ws1.write_column(2,n, uvvis_datas[0].wavelength_array)
-    n+=1
-    for data in uvvis_datas:
-        ws1.write_column(0,n, [data.name, 'A'])
-        ws1.write_column(2,n, data.absorbance_array)
+    c = Counter([
+        (data.wavelength_array[0], data.wavelength_array[-1], len(data.wavelength_array)) 
+        for data in uvvis_datas])
+    if len(c)==1:
+        ws1 = wb.add_worksheet('combined')
+        n = 0
+        ws1.write(0,n, 'name→')
+        ws1.write(1,n, 'nm')
+        ws1.write_column(2,n, uvvis_datas[0].wavelength_array)
         n+=1
-    ws1.set_column(0,n, 10, center)
-
-    ws2 = wb.add_worksheet('separated')
-    n = 0
-    for data in uvvis_datas:
-        ws2.write_row(0,n, ['name', data.name])
-        ws2.write_row(1,n, ['nm', 'A'])
-        ws2.write_column(2,n, data.wavelength_array)
-        ws2.write_column(2,n+1, data.absorbance_array)
-        n+=3
-    ws2.set_column(0,n, 10, center)
-    ws1.activate()
+        for data in uvvis_datas:
+            ws1.write_column(0,n, [data.name, 'A'])
+            ws1.write_column(2,n, data.absorbance_array)
+            n+=1
+        ws1.set_column(0,n, 10, center)
+    else:
+        ws2 = wb.add_worksheet('separated')
+        n = 0
+        for data in uvvis_datas:
+            ws2.write_row(0,n, ['name', data.name])
+            ws2.write_row(1,n, ['nm', 'A'])
+            ws2.write_column(2,n, data.wavelength_array)
+            ws2.write_column(2,n+1, data.absorbance_array)
+            n+=3
+        ws2.set_column(0,n, 10, center)
     wb.close()
 
 def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=None):
@@ -212,25 +214,9 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=Non
 
     n = len(uvvis_datas)
     if color:
-        colorlist = []
-        if colors.is_color_like(color):
-            # 给一个颜色则按透明度递减产生颜色列表
-            color = colors.to_rgba(color)
-            alpha = np.linspace(color[3], 0.382, n)
-            for i in range(n):
-                colorlist.append((color[0], color[1], color[2], alpha[i]))
-        else:
-            if n <= len(color):
-                # 颜色数大于曲线条数则直接应用
-                colorlist = color
-            else:
-                # 颜色数小于曲线条数则转为LinearSegmentedColormap，再插值
-                lscm = colors.LinearSegmentedColormap.from_list('', color)
-                colorlist = calculation.cmap_interpolation(lscm, n)
-        ax.set_prop_cycle(color=colorlist)
+        ax.set_prop_cycle(color=calculation.get_color_list(color, n))
     elif colormap:
-        colorlist = calculation.cmap_interpolation(colormap, n)
-        ax.set_prop_cycle(color=colorlist)
+        ax.set_prop_cycle(color=calculation.cmap_interpolation(colormap, n))
 
     for data in uvvis_datas:
         ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
@@ -245,7 +231,7 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=Non
         ax.legend(handles, labels)
     return fig
 
-def draw_concentration_change(cc_datas, font=None, legend_loc=None, ylim=(-0.1, 1.1), **kwargs):
+def draw_concentration_change(cc_datas, color=None, colormap=None, font=None, legend_loc=None, ylim=(-0.1, 1.1), **kwargs):
     '''
     传入ConcentrationChangeData实例的列表
     绘制物质浓度-时间图
@@ -254,9 +240,21 @@ def draw_concentration_change(cc_datas, font=None, legend_loc=None, ylim=(-0.1, 
     ax = fig.add_subplot(111)
     if font:
         plt.rcParams['font.sans-serif'] = font
-    #color循环为默认风格的循环
-    ax.set_prop_cycle(marker=['o', 'v', 's', 'p', 'h', '*', 'D', 'P', 'X', '8'],
-                      color=['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'])
+
+    # 设置循环风格
+    n = len(cc_datas)
+    if color:
+        m_cycle = cycle(D_MARKERS)
+        markers = [m_cycle.__next__() for i in range(n)]
+        colorlist = calculation.get_color_list(color, n)
+    elif colormap:
+        m_cycle = cycle(D_MARKERS)
+        markers = [m_cycle.__next__() for i in range(n)]
+        colorlist = calculation.cmap_interpolation(colormap, n)
+    else:
+        markers = D_MARKERS
+        colorlist = D_COLORS
+    ax.set_prop_cycle(marker=markers, color=colorlist)
 
     for c_change in cc_datas:
         ax.plot(c_change.time_array, c_change.c_array, label=c_change.name, **kwargs)
