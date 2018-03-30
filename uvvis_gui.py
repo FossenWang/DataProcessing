@@ -74,7 +74,7 @@ class Application(tk.Frame):
             cc_filedir = self.dir_label['text']
             if not cc_filedir:
                 raise ValueError('请选择文件夹')
-            wavelength = int(self.wavelength_entry.get())
+            wavelength = float(self.wavelength_entry.get())
             add_item = str(wavelength)+' | '+cc_filedir
             items = [self.dir_listbox.get(i) for i in range(self.dir_listbox.size())]
             for i in items:
@@ -218,7 +218,7 @@ class Application(tk.Frame):
         for i in items:
             wave, file_dir = i.split(' | ')
             cc_datas.append(uvvis.get_concentration_change(
-                uvvis.read_ascdir(file_dir), int(wave), split(r'/|\\', file_dir)[-1]))
+                uvvis.read_ascdir(file_dir), float(wave), split(r'/|\\', file_dir)[-1]))
         return cc_datas
 
     def show_cc_figure(self):

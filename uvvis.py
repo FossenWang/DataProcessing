@@ -29,8 +29,12 @@ class UvvisData:
         '''
         取出光谱数据中某一波长的吸光度
         '''
-        if wavelength in self.wavelength_array:
-            return self.absorbance_array[np.where(self.wavelength_array == wavelength)[0][0]]
+        if self.wavelength_array.min() < wavelength and wavelength < self.wavelength_array.max():
+            # 搜索近似值
+            dif = abs(self.wavelength_array-wavelength)
+            i = dif.argmin()
+            return self.absorbance_array[i]
+            # return self.absorbance_array[np.where(self.wavelength_array == wavelength)[0][0]]
         else:
             raise ValueError('{} | 输入波长范围应在{}~{}nm内'.format(wavelength, self.wavelength_array[-1], self.wavelength_array[0]))
 
@@ -93,6 +97,8 @@ def read_ascdir(filedir):
     except ValueError:
         ascfiles.sort()
     if y:ascfiles.insert(0,y)
+    if not ascfiles:
+        raise TypeError('%s文件夹内无asc文件！'%filedir)
 
     uvvis_datas = []
     for f in ascfiles:
@@ -122,6 +128,8 @@ def get_concentration_change(uvvis_datas, wavelength, name=''):
     传入UvvisData列表和相应的时间以及特征波长
     得到浓度变化的数据
     '''
+    if not uvvis_datas:
+        raise TypeError('请输入uvvis数据')
     absorlist = []
     timelist = []
     init_absor = None
@@ -132,9 +140,8 @@ def get_concentration_change(uvvis_datas, wavelength, name=''):
             absorlist.append(data.get_absorbance(wavelength))
             try:
                 timelist.append(int(data.name))
-            except ValueError as e:
-                print(e,'\n文件名应为整数\n')
-                raise e
+            except ValueError:
+                raise ValueError('文件名应为整数!')
     return ConcentrationChangeData(np.array(absorlist), timelist, name, init_absor, wavelength)
 
 def write_xlsx(file_path, datas):
@@ -202,7 +209,7 @@ def write_uvvis_datas(file_path, uvvis_datas):
         ws2.set_column(0,n, 10, center)
     wb.close()
 
-def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=None):
+def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=None, xlim=None, ylim=None, **kwargs):
     '''
     输入二维列表并绘制出uv-vis图
     该列表第二维的元素也是一个列表，其中包含波长、吸光度的两个np数组
@@ -219,8 +226,10 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=Non
         ax.set_prop_cycle(color=calculation.cmap_interpolation(colormap, n))
 
     for data in uvvis_datas:
-        ax.plot(data.wavelength_array, data.absorbance_array, label=data.name)
+        ax.plot(data.wavelength_array, data.absorbance_array, label=data.name, **kwargs)
 
+    if xlim:ax.set_xlim(xlim[0], xlim[1])
+    if ylim:ax.set_ylim(ylim[0], ylim[1])
     ax.set_xlabel('wavelength')
     ax.set_ylabel('absorbance')
     ax.set_title('UV-Vis')
@@ -231,7 +240,7 @@ def draw_uvvis(uvvis_datas, color=None, colormap=None, font=None, legend_loc=Non
         ax.legend(handles, labels)
     return fig
 
-def draw_concentration_change(cc_datas, color=None, colormap=None, font=None, legend_loc=None, ylim=(-0.1, 1.1), **kwargs):
+def draw_concentration_change(cc_datas, color=None, colormap=None, font=None, legend_loc=None, xlim=None, ylim=(-0.1, 1.1), **kwargs):
     '''
     传入ConcentrationChangeData实例的列表
     绘制物质浓度-时间图
@@ -258,8 +267,20 @@ def draw_concentration_change(cc_datas, color=None, colormap=None, font=None, le
 
     for c_change in cc_datas:
         ax.plot(c_change.time_array, c_change.c_array, label=c_change.name, **kwargs)
+        # 如果超过指定界限则扩大界限
+        if xlim:
+            xlim = (
+                min(xlim[0], min(c_change.time_array)),
+                max(xlim[1], max(c_change.time_array))
+                )
+        if ylim:
+            ylim = (
+                min(ylim[0], min(c_change.c_array)),
+                max(ylim[1], max(c_change.c_array))
+            )
 
-    ax.set_ylim(ylim[0], ylim[1])
+    if xlim: ax.set_xlim(xlim[0], xlim[1])
+    if ylim: ax.set_ylim(ylim[0], ylim[1])
     ax.set_xlabel('Time (min)')
     ax.set_ylabel(r'$C/C_0$')
     handles, labels = ax.get_legend_handles_labels()
