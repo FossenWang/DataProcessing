@@ -1,3 +1,6 @@
+'''
+以uvvis为核心的一个简单的GUI界面程序
+'''
 from os import startfile
 from collections import Counter
 from re import split

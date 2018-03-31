@@ -1,3 +1,4 @@
+'命令行版程序，已弃用'
 import traceback
 import matplotlib.pyplot as plt
 import uvvis

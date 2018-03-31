@@ -1,6 +1,5 @@
 
 *.pyc
-*.docx
 *.spec
 build/
 dist/

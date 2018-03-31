@@ -1,28 +1,62 @@
 ## 目录
+* [uvvis_gui模块](#uvvis_gui模块)
 * [uvvis模块](#uvvis模块)
-  * [使用说明](#使用说明)
-  * [API 参考](#api-参考)
 * [uvvisdrs模块](#uvvisdrs模块)
-  * [使用说明](#使用说明-1)
-  * [API 参考](#api-参考-1)
+
+# uvvis_gui模块
+该模块是以uvvis为核心础的一个简单的GUI界面程序
+
+##使用
+直接执行该脚本即可打开GUI界面
+```
+python uvvis_gui.py
+```
+使用方法请参考——使用手册manual.docx
+
+##效果展示
+吸光度-波长曲线
+![吸光度-波长曲线](./example/uvvis/uvvis.png)
+浓度变化曲线
+![浓度变化曲线](./example/uvvis/concentration_change.png)
+用colormap分配线条颜色
+![用colormap分配线条颜色](./example/uvvis/colormap.png)
+
+
 
 # uvvis模块
 处理紫外可见分光光度法的实验数据
 暂时只支持读取以下型号的仪器产生的数据：
 * PerkinElmer UV WinLab 6.0.4.0738 / Lambda35 1.27
 
-## 使用说明
+## 绘制吸光度-波长曲线
+```python
+import matplotlib.pyplot as plt
+import uvvis
 
-## API 参考
+# 读取数据
+uvvis_datas = uvvis.read_ascdir('/path/to/files')
+# 绘图
+fig_uv = uvvis.draw_uvvis(uvvis_datas)
+plt.show()
+# 保存结果
+uvvis.write_uvvis_datas('/path/to/save', uvvis_datas)
+```
 
-### class UvvisData
-### class ConcentrationChangeData
-### read_asc(file)
-### read_ascdir(filedir)
-### read_ccdatas(cc_filedir, wavelength)
-### get_concentration_change(uvvis_datas, wavelength, name)
-### draw_uvvis(uvvis_datas)
-### draw_concentration_change(cc_datas)
+## 绘制浓度变化曲线
+```python
+import matplotlib.pyplot as plt
+import uvvis
+
+# 读取数据
+cc_datas = uvvis.read_ccdatas(r'', wavelength=485)
+# 绘图
+fig_cc = uvvis.draw_concentration_change(cc_datas)
+plt.show()
+# 保存结果
+uvvis.write_cc_datas('/path/to/save', cc_datas)
+```
+
+
 
 # uvvisdrs模块
 处理处理紫外可见漫反射光谱的实验数据
@@ -30,8 +64,7 @@
 * UV-Visible diffuse reflectance spectroscopy UV-2550PC (Shimadzu Corporation, Japan)
 参考文献：DOI: 10.1039/c7tc04168c
 
-## 使用说明
-### 自动拟合
+## 自动拟合
 以样品1为例，原始数据保存在1.txt中，内容应如下，否则程序无法正确识别：
 ```
 1.txt
@@ -67,7 +100,7 @@ drs.write_xlsx()
 #将实验数据写入excel的xlsx文件中，保存路径为drs.name.split('.')[0]+'_result.txt'
 ```
 以上代码应该得到类似这样的结果：
-![样品1的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/1_result.png "样品1的原始数据与拟合直线图")
+![样品1的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/1_result.png "样品1的原始数据与拟合直线图")
 ```
 1_result.txt
 samlpe:1
@@ -81,7 +114,7 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 200.5	0.09706	6.18453865337	4.19998270966	674.698308624	5.09656309795
 201.0	0.09419	6.16915422886	4.35551415278	721.988223942	5.18361250041
 ```
-### 手动拟合
+## 手动拟合
 
 但数据不总是尽如人意的，如果程序自动拟合的结果不好，则需要调用refit()函数来手动拟合
 下面是手动拟合的例子：
@@ -94,7 +127,7 @@ fig = drs.draw_hvfr()
 plt.show()
 ```
 发现自动拟合的结果有误，第二张图中由于曲线有突起，使得程序算法中默认的拟合算法出现偏差，如下：
-![自动拟合结果有误](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/3_wrong_result.png "自动拟合结果有误")
+![自动拟合结果有误](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/3_wrong_result.png "自动拟合结果有误")
 接下来需要手动拟合，需要先从图上找出较比较直的一段曲线
 将鼠标移动到这段曲线中央的一点上，读出其横坐标，输入至refit()函数中即可完成一次手动拟合
 ```python
@@ -108,7 +141,7 @@ fig = drs.draw_hvfr()
 plt.show()#重绘并显示图像
 ```
 手动拟合结果如下：
-![样品3的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/3_result.png "样品3的原始数据与拟合直线图")
+![样品3的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/3_result.png "样品3的原始数据与拟合直线图")
 ```
 3_result.txt
 samlpe:3
@@ -122,12 +155,3 @@ wavelength	R	hv	F(R)	(hvF(R))^2	(hvF(R))^1/2
 200.5	0.38454	6.18453865337	0.492524849951	9.27835342055	1.74529051228
 201.0	0.38687	6.16915422886	0.485858811616	8.98403474041	1.73128216716
 ```
-
-## API 参考
-### read_raw(file)
-### logistic_fit(x, y)
-### num_differ(x, y)
-### class UvvisDrsData
-#### refit(n, fp, a)
-#### write_txt(drs)
-#### draw_hvfr(drs)
