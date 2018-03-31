@@ -6,20 +6,20 @@
 # uvvis_gui模块
 该模块是以uvvis为核心础的一个简单的GUI界面程序
 
-##使用
+## 使用
 直接执行该脚本即可打开GUI界面
 ```
 python uvvis_gui.py
 ```
 使用方法请参考——使用手册manual.docx
 
-##效果展示
-吸光度-波长曲线
-![吸光度-波长曲线](./example/uvvis/uvvis.png)
-浓度变化曲线
-![浓度变化曲线](./example/uvvis/concentration_change.png)
-用colormap分配线条颜色
-![用colormap分配线条颜色](./example/uvvis/colormap.png)
+## 效果展示
+<br>吸光度-波长曲线<br>
+![吸光度-波长曲线](./example/uvvis/uvvis.png)<br><br>
+浓度变化曲线<br>
+![浓度变化曲线](./example/uvvis/concentration_change.png)<br><br>
+用colormap分配线条颜色<br>
+![用colormap分配线条颜色](./example/uvvis/colormap.png)<br><br>
 
 
 
@@ -99,8 +99,8 @@ drs.write_txt()
 drs.write_xlsx()
 #将实验数据写入excel的xlsx文件中，保存路径为drs.name.split('.')[0]+'_result.txt'
 ```
-以上代码应该得到类似这样的结果：
-![样品1的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/1_result.png "样品1的原始数据与拟合直线图")
+以上代码应该得到类似这样的结果：<br>
+![样品1的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/1_result.png "样品1的原始数据与拟合直线图")<br>
 ```
 1_result.txt
 samlpe:1
@@ -126,8 +126,8 @@ drs = uvvisdrs.read_raw(r'F:/Laboratory/实验数据/紫外漫反射/3.txt')
 fig = drs.draw_hvfr()
 plt.show()
 ```
-发现自动拟合的结果有误，第二张图中由于曲线有突起，使得程序算法中默认的拟合算法出现偏差，如下：
-![自动拟合结果有误](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/3_wrong_result.png "自动拟合结果有误")
+发现自动拟合的结果有误，第二张图中由于曲线有突起，使得程序算法中默认的拟合算法出现偏差，如下：<br>
+![自动拟合结果有误](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/3_wrong_result.png "自动拟合结果有误")<br>
 接下来需要手动拟合，需要先从图上找出较比较直的一段曲线
 将鼠标移动到这段曲线中央的一点上，读出其横坐标，输入至refit()函数中即可完成一次手动拟合
 ```python
@@ -140,8 +140,8 @@ drs.refit(0.5, 5.9)
 fig = drs.draw_hvfr()
 plt.show()#重绘并显示图像
 ```
-手动拟合结果如下：
-![样品3的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/3_result.png "样品3的原始数据与拟合直线图")
+手动拟合结果如下：<br>
+![样品3的原始数据与拟合直线图](https://raw.githubusercontent.com/FossenWang/DataProcessing/master/example/uvvisdrs/3_result.png "样品3的原始数据与拟合直线图")<br>
 ```
 3_result.txt
 samlpe:3
