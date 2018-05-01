@@ -4,7 +4,7 @@
 * [uvvisdrs模块](#uvvisdrs模块)
 
 # uvvis_gui模块
-该模块是以uvvis为核心础的一个简单的GUI界面程序
+该模块是以uvvis为核心的一个简单的GUI界面程序
 
 ## 使用
 直接执行该脚本即可打开GUI界面
@@ -59,7 +59,7 @@ uvvis.write_cc_datas('/path/to/save', cc_datas)
 
 
 # uvvisdrs模块
-处理处理紫外可见漫反射光谱的实验数据
+处理紫外可见漫反射光谱的实验数据
 暂时只支持读取以下型号的仪器产生的数据：
 * UV-Visible diffuse reflectance spectroscopy UV-2550PC (Shimadzu Corporation, Japan)
 参考文献：DOI: 10.1039/c7tc04168c
